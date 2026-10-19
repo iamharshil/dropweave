@@ -22,9 +22,9 @@ describe('Signaling Integration', () => {
   let serverUrl: string;
 
   beforeAll(() => {
-    // Use port 18765 for testing
+    // Use dynamic port 0 for testing to avoid conflicts
     serverInstance = createSignalingServer({
-      port: 18765,
+      port: 0,
       sessionTimeoutMs: 5000,
       cleanupIntervalMs: 1000,
     });

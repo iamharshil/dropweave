@@ -62,21 +62,8 @@ export async function receiveCommand(options: ReceiveCommandOptions): Promise<vo
   try {
     await signaling.connect();
 
-    // Join session
-    signaling.send('session:join', { code }, code);
-
-    // Wait for approval
-    const approved = await signaling.waitFor('session:approved', 30000);
-
-    if (!quiet) {
-      process.stdout.write('  Session approved. Connecting...\n');
-    }
-
     // Set up WebRTC (responder side)
     peer = new PeerConnectionWrapper({ iceServers });
-
-    // Wait for the offer from the host
-    let dataChannel: DataChannelWrapper | null = null;
 
     // Listen for incoming data channel (responder gets it via onDataChannel)
     const dataChannelPromise = new Promise<DataChannelWrapper>((resolve, reject) => {
@@ -112,7 +99,7 @@ export async function receiveCommand(options: ReceiveCommandOptions): Promise<vo
       signaling.send('peer:ice-candidate', { candidate, mid }, code);
     });
 
-    // Listen for remote signaling
+    // Listen for remote signaling (registered before joining to ensure no messages are missed)
     signaling.on('message', (msg: SignalingMessage) => {
       if (msg.type === 'peer:offer' && msg.payload) {
         peer!.setRemoteDescription(
@@ -127,8 +114,18 @@ export async function receiveCommand(options: ReceiveCommandOptions): Promise<vo
       }
     });
 
+    // Join session
+    signaling.send('session:join', { code }, code);
+
+    // Wait for approval
+    const approved = await signaling.waitFor('session:approved', 30000);
+
+    if (!quiet) {
+      process.stdout.write('  Session approved. Connecting...\n');
+    }
+
     // Wait for data channel
-    dataChannel = await dataChannelPromise;
+    const dataChannel = await dataChannelPromise;
 
     // Detect connection mode
     const mode = peer.detectConnectionMode();

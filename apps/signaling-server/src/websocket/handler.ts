@@ -174,13 +174,15 @@ export class MessageHandler {
       return;
     }
 
-    // Notify the joiner
-    if (session.joinerSocket) {
-      this.send(session.joinerSocket, {
-        v: 1,
-        type: 'session:approved',
-        sessionCode: code,
-      });
+    // Notify both host and joiner
+    for (const sock of [session.hostSocket, session.joinerSocket]) {
+      if (sock) {
+        this.send(sock, {
+          v: 1,
+          type: 'session:approved',
+          sessionCode: code,
+        });
+      }
     }
   }
 

@@ -88,6 +88,7 @@ export async function sendCommand(options: SendCommandOptions): Promise<void> {
 
     // Auto-approve (anonymous 1:1 mode)
     signaling.send('session:approve', undefined, code);
+    await signaling.waitFor('session:approved', 10000);
 
     if (!quiet) {
       clearProgress();
@@ -96,9 +97,6 @@ export async function sendCommand(options: SendCommandOptions): Promise<void> {
 
     // Set up WebRTC
     peer = new PeerConnectionWrapper({ iceServers });
-
-    // Create data channel
-    const dataChannel = peer.createDataChannel('transfer');
 
     // Set up signaling relay
     peer.on('local-description', (sdp, type) => {
@@ -123,6 +121,9 @@ export async function sendCommand(options: SendCommandOptions): Promise<void> {
         );
       }
     });
+
+    // Create data channel (triggers local-description generation)
+    const dataChannel = peer.createDataChannel('transfer');
 
     // Wait for data channel to open
     await new Promise<void>((resolve, reject) => {

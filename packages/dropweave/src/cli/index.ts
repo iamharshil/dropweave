@@ -27,14 +27,17 @@ program
   .argument('<file>', 'Path to the file to send')
   .option('-s, --signal <url>', 'Signaling server URL', DEFAULT_SIGNALING_URL)
   .option('-t, --timeout <seconds>', 'Session timeout in seconds', '600')
+  .option('--no-stun', 'Disable public STUN servers (for local/LAN transfers)')
   .option('-q, --quiet', 'Quiet mode — JSON output only', false)
-  .action(async (file: string, opts: { signal: string; timeout: string; quiet: boolean }) => {
+  .action(async (file: string, opts: { signal: string; timeout: string; stun: boolean; quiet: boolean }) => {
     await sendCommand({
       filePath: file,
       signalingUrl: opts.signal,
       timeout: parseInt(opts.timeout, 10),
+      iceServers: opts.stun ? undefined : [],
       quiet: opts.quiet,
     });
+    process.exit(0);
   });
 
 program
@@ -43,14 +46,17 @@ program
   .argument('<code>', 'The 8-character session code')
   .option('-s, --signal <url>', 'Signaling server URL', DEFAULT_SIGNALING_URL)
   .option('-o, --output <dir>', 'Output directory', '.')
+  .option('--no-stun', 'Disable public STUN servers (for local/LAN transfers)')
   .option('-q, --quiet', 'Quiet mode — JSON output only', false)
-  .action(async (code: string, opts: { signal: string; output: string; quiet: boolean }) => {
+  .action(async (code: string, opts: { signal: string; output: string; stun: boolean; quiet: boolean }) => {
     await receiveCommand({
       code,
       signalingUrl: opts.signal,
       outputDir: opts.output,
+      iceServers: opts.stun ? undefined : [],
       quiet: opts.quiet,
     });
+    process.exit(0);
   });
 
 program.parse();
