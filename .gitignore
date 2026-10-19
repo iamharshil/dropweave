@@ -1,0 +1,5 @@
+node_modules/
+dist/
+*.dwpart
+.DS_Store
+*.log
