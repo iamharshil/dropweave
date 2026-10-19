@@ -19,7 +19,7 @@ const program = new Command();
 program
   .name('dropweave')
   .description('Anonymous peer-to-peer file transfer. Zero-knowledge. Direct connection.')
-  .version('0.1.0');
+  .version('1.0.0');
 
 program
   .command('send')
