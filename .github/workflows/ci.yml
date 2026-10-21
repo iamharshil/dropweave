@@ -1,8 +1,9 @@
-name: CI
+name: CI / CD
 
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
 
@@ -40,3 +41,54 @@ jobs:
 
       - name: Build package
         run: bun run build
+
+  publish:
+    name: Auto-Publish to npm
+    needs: test
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies & Build
+        run: |
+          bun install
+          bun run build
+
+      - name: Publish to npm (if version bumped)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cd packages/dropweave
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          PUBLISHED_VERSION=$(npm view dropweave version 2>/dev/null || echo "none")
+
+          echo "Current package.json version: $CURRENT_VERSION"
+          echo "Published npm registry version: $PUBLISHED_VERSION"
+
+          if [ "$CURRENT_VERSION" != "$PUBLISHED_VERSION" ]; then
+            if [ -z "$NODE_AUTH_TOKEN" ]; then
+              echo "::error::NPM_TOKEN secret is not set in GitHub repository secrets. Please add it to enable auto-publishing."
+              exit 1
+            fi
+            echo "New version detected ($CURRENT_VERSION != $PUBLISHED_VERSION). Publishing to npm..."
+            npm publish --provenance
+          else
+            echo "Version $CURRENT_VERSION is already published on npm. Skipping publication."
+          fi
