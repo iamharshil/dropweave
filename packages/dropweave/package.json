@@ -1,6 +1,6 @@
 {
   "name": "dropweave",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Anonymous peer-to-peer file transfer CLI. Zero-knowledge. Direct WebRTC connection.",
   "type": "module",
   "main": "./dist/index.js",
@@ -21,6 +21,7 @@
   ],
   "scripts": {
     "build": "bun build ./src/cli/index.ts --outdir ./dist/cli --target node --external node-datachannel && bun build ./src/index.ts --outdir ./dist --target node --external node-datachannel && tsc --emitDeclarationOnly",
+    "prepublishOnly": "bun run build",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
@@ -52,7 +53,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/iamharshil/dropweave.git"
+    "url": "git+https://github.com/iamharshil/dropweave.git"
   },
   "homepage": "https://github.com/iamharshil/dropweave#readme",
   "bugs": {

@@ -182,6 +182,16 @@ export class SignalingClient extends EventEmitter {
           clearTimeout(timeout);
           this.removeListener('message', handler);
           resolve(msg);
+        } else if (msg.type === 'session:error' && type !== 'session:error') {
+          clearTimeout(timeout);
+          this.removeListener('message', handler);
+          const errorMsg =
+            typeof msg.payload?.message === 'string'
+              ? msg.payload.message
+              : typeof msg.payload?.code === 'string'
+                ? `Signaling error: ${msg.payload.code}`
+                : 'Signaling server returned an error';
+          reject(new Error(errorMsg));
         }
       };
 

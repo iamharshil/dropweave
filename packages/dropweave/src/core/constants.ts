@@ -9,6 +9,9 @@
 // Packet Protocol
 // ---------------------------------------------------------------------------
 
+/** Package version. */
+export const VERSION = '1.0.1';
+
 /** Size of the binary packet header in bytes. */
 export const PACKET_HEADER_SIZE = 12;
 
