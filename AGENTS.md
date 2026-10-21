@@ -410,3 +410,72 @@ The MVP is complete only when all of these work:
 -   Update the README and tests whenever the public API or protocol
     changes.
 -   Prioritize a working vertical slice over speculative features.
+
+## 12. Release and Publishing Operations (npm & GitHub)
+
+### Package & Registry Metadata
+
+-   **npm Package**: [`dropweave`](https://www.npmjs.com/package/dropweave) (unscoped, public).
+-   **Package Location**: [`packages/dropweave/`](file:///Users/harsh/development/dropweave/packages/dropweave).
+-   **CLI Binary Entry**: `"bin": { "dropweave": "./dist/cli/index.js" }`.
+    *Note: The leading `./` is mandatory; npm's normalization will drop the binary script without it.*
+-   **Build & Pre-publish Hook**: `"prepublishOnly": "bun run build"` ensures `dist/` is always compiled fresh before packaging.
+-   **Tarball Whitelist**: Governed by `"files": ["dist", "README.md", "LICENSE"]` in `packages/dropweave/package.json`.
+
+### Automated CI/CD Publishing Pipeline
+
+The GitHub Actions workflow [`.github/workflows/ci.yml`](file:///Users/harsh/development/dropweave/.github/workflows/ci.yml) automates testing and publishing:
+
+1.  **Test Matrix**: Runs `bun test`, `bun run typecheck`, and `bun run build` across **Node.js 18.x, 20.x, 22.x** and **Bun**.
+2.  **Gatekeeper**: Publishing is blocked if any test fails or if the commit is on a non-main pull request.
+3.  **Smart Version Detection**:
+    -   Compares the local `package.json` version against the latest version on `https://registry.npmjs.org/dropweave`.
+    -   If a new version is detected, it runs `npm publish --provenance` using the `NPM_TOKEN` repository secret and GitHub OIDC token.
+    -   If the version matches the published registry version, publishing is skipped safely.
+
+### Standard Release Workflow for Future Agents
+
+To release a new version of Dropweave:
+
+1.  **Bump Versions**:
+    -   Update `"version"` in [`packages/dropweave/package.json`](file:///Users/harsh/development/dropweave/packages/dropweave/package.json).
+    -   Update `"version"` in root [`package.json`](file:///Users/harsh/development/dropweave/package.json).
+    -   Update `VERSION` constant in [`packages/dropweave/src/core/constants.ts`](file:///Users/harsh/development/dropweave/packages/dropweave/src/core/constants.ts).
+2.  **Verify & Build**:
+    ```bash
+    bun run build
+    bun test tests/unit
+    cd packages/dropweave && npm pack --dry-run
+    ```
+3.  **Branch & PR**:
+    -   Create a branch: `git checkout -b release/vX.Y.Z`
+    -   Commit: `git commit -m "chore(release): bump version to vX.Y.Z"`
+    -   Push and create PR: `gh pr create`
+    -   Merge to `main`: `gh pr merge --squash --delete-branch`
+4.  **Create Git Tag and GitHub Release**:
+    ```bash
+    git tag -a vX.Y.Z <commit-hash> -m "vX.Y.Z"
+    git push origin --tags
+    gh release create vX.Y.Z --title "vX.Y.Z - <Release Title>" --notes "<Release Notes>"
+    ```
+5.  **Direct Manual Publish (Fallback)**:
+    If publishing manually from the CLI:
+    ```bash
+    cd packages/dropweave
+    # If 2FA OTP is required:
+    npm publish --otp=<code>
+    # If an automation/granular token is set:
+    npm publish
+    ```
+
+### Release History & Log
+
+-   **`v1.0.0`**: Initial release. Anonymous peer-to-peer file transfer CLI over WebRTC data channels with zero-knowledge WebSocket signaling, adaptive chunking (16–256 KiB), backpressure flow control, and streaming SHA-256 verification.
+-   **`v1.0.1`**: Fixed npm binary script path (`./dist/cli/index.js`), added immediate rejection on `session:error` to eliminate 30-second signaling hangs, added `DROPWEAVE_SIGNALING_URL` environment variable support, added `--no-stun` documentation, updated READMEs with beginner-friendly guides, and established GitHub Releases.
+
+### Security Rules for Release Operations
+
+-   **Never commit, hardcode, or display tokens**: All npm access tokens must be stored only in GitHub Secrets (`NPM_TOKEN`) or local user config (`~/.npmrc`). Never commit them to the repository or log them in outputs.
+-   **Never inspect `.env` files**: Adhere to user and system privacy rules.
+-   **Sync READMEs**: Always keep root [`README.md`](file:///Users/harsh/development/dropweave/README.md) and [`packages/dropweave/README.md`](file:///Users/harsh/development/dropweave/packages/dropweave/README.md) identical so npmjs.com and GitHub render the same documentation.
+
