@@ -67,10 +67,16 @@ export class SignalingClient extends EventEmitter {
           };
 
           ws.onerror = (event: any) => {
+            const detail =
+              event?.message ||
+              (event?.error && event.error.message) ||
+              'WebSocket connection failed';
             const error = new Error(
-              `Signaling error: ${event?.message || 'WebSocket connection error'}`,
+              `Cannot connect to signaling server at ${this.url} (${detail}).\n` +
+              `  • Ensure the signaling server is running, or provide a URL with -s / --signal <url>\n` +
+              `  • Or set the DROPWEAVE_SIGNALING_URL environment variable`,
             );
-            this.emit('error', error);
+            this.emitError(error);
             if (!this._isConnected) reject(error);
           };
 
@@ -98,8 +104,12 @@ export class SignalingClient extends EventEmitter {
           });
 
           ws.onError((err: string) => {
-            const error = new Error(`Signaling error: ${err}`);
-            this.emit('error', error);
+            const error = new Error(
+              `Cannot connect to signaling server at ${this.url} (${err}).\n` +
+              `  • Ensure the signaling server is running, or provide a URL with -s / --signal <url>\n` +
+              `  • Or set the DROPWEAVE_SIGNALING_URL environment variable`,
+            );
+            this.emitError(error);
             if (!this._isConnected) reject(error);
           });
 
@@ -113,6 +123,16 @@ export class SignalingClient extends EventEmitter {
     });
   }
 
+  /**
+   * Safely emit an 'error' event only if listeners are registered,
+   * avoiding uncaught exception process crashes in Node.js.
+   */
+  private emitError(err: Error): void {
+    if (this.listenerCount('error') > 0) {
+      this.emit('error', err);
+    }
+  }
+
   private handleIncoming(data: any): void {
     try {
       const text = typeof data === 'string' ? data : data.toString('utf-8');
@@ -120,8 +140,7 @@ export class SignalingClient extends EventEmitter {
 
       // Basic validation
       if (msg.v !== 1 || typeof msg.type !== 'string') {
-        this.emit(
-          'error',
+        this.emitError(
           new Error('Invalid signaling message: missing v or type'),
         );
         return;
@@ -129,8 +148,7 @@ export class SignalingClient extends EventEmitter {
 
       this.emit('message', msg);
     } catch (err) {
-      this.emit(
-        'error',
+      this.emitError(
         new Error(`Failed to parse signaling message: ${err}`),
       );
     }

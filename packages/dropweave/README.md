@@ -81,7 +81,10 @@ File bytes travel directly device-to-device with real-time speed progress and cr
 If you use Dropweave frequently and want to type `dropweave` directly without `npx`:
 
 ```bash
-# Using npm (included automatically with Node.js)
+# Using npm (recommended for modern npm / Node.js 20+):
+npm install -g --allow-scripts=node-datachannel dropweave
+
+# Or standard npm install:
 npm install -g dropweave
 
 # Or using bun

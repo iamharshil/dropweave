@@ -68,6 +68,9 @@ export async function sendCommand(options: SendCommandOptions): Promise<void> {
 
   // Connect to signaling server
   const signaling = new SignalingClient({ url: signalingUrl });
+  signaling.on('error', () => {
+    // Handled via promise rejection and try/catch
+  });
   let peer: PeerConnectionWrapper | null = null;
 
   try {
