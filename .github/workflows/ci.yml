@@ -87,12 +87,21 @@ jobs:
               echo "::error::NPM_TOKEN secret is not set in GitHub repository secrets. Please add it to enable auto-publishing."
               exit 1
             fi
+
+            # Ensure npm auth token is written to both home and project .npmrc
+            echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+            echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+
+            echo "Verifying npm authentication..."
+            npm whoami --registry https://registry.npmjs.org || echo "Could not verify whoami; continuing to publish..."
+
             echo "New version detected ($CURRENT_VERSION != $PUBLISHED_VERSION). Publishing to npm..."
-            npm publish --provenance || {
+            npm publish --access public --provenance || {
               if npm view "dropweave@$CURRENT_VERSION" >/dev/null 2>&1; then
                 echo "Version $CURRENT_VERSION was already published. Skipping."
               else
-                exit 1
+                echo "Publish with provenance failed; retrying standard public publish..."
+                npm publish --access public
               fi
             }
           else

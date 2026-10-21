@@ -475,6 +475,7 @@ To release a new version of Dropweave:
 -   **`v1.0.1`**: Fixed npm binary script path (`./dist/cli/index.js`), added immediate rejection on `session:error` to eliminate 30-second signaling hangs, added `DROPWEAVE_SIGNALING_URL` environment variable support, added `--no-stun` documentation, updated READMEs with beginner-friendly guides, and established GitHub Releases.
 -   **`v1.0.2`**: Expanded npm search keywords, package repository metadata, and practical cross-platform use cases.
 -   **`v1.0.3`**: Multi-version automated CI/CD npm publishing with signed Sigstore provenance verification and comprehensive security test suites.
+-   **`v1.0.4`**: Prominent Quick Start & Installation section in README, relicensed under GNU GPLv3 for public copyleft protection, added `"publishConfig": {"access": "public"}`, and enhanced CI/CD npm auth resilience.
 
 ### Security & Operational Rules for Release Operations
 

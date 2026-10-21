@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 
 /** Package version. */
-export const VERSION = '1.0.3';
+export const VERSION = '1.0.4';
 
 /** Size of the binary packet header in bytes. */
 export const PACKET_HEADER_SIZE = 12;
