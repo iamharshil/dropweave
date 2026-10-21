@@ -136,7 +136,7 @@ export class FileReader {
 
     const remaining = this._fileSize - this._offset;
     const toRead = Math.min(chunkSize, remaining);
-    const buffer = Buffer.alloc(toRead);
+    const buffer = Buffer.allocUnsafe(toRead);
 
     const result = await this.handle.read(buffer, 0, toRead, this._offset);
     this._offset += result.bytesRead;

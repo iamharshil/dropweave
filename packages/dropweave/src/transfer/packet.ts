@@ -27,8 +27,8 @@ export class PacketTracker {
   /** Outstanding sent packets awaiting ACK. */
   private readonly sent = new Map<number, SentRecord>();
 
-  /** Set of acknowledged sequence numbers. */
-  private readonly acked = new Set<number>();
+  /** Total count of acknowledged sequence numbers. */
+  private _ackedCount = 0;
 
   /** Rolling RTT samples in milliseconds. */
   private readonly rttSamples: number[] = [];
@@ -58,8 +58,14 @@ export class PacketTracker {
   // Send / ACK
   // -------------------------------------------------------------------------
 
-  /** Record a packet being sent. */
+  /** Record a packet being sent with bounded memory protection (max 500 entries). */
   recordSent(seq: number, size: number): void {
+    if (this.sent.size >= 500) {
+      const oldestKey = this.sent.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.sent.delete(oldestKey);
+      }
+    }
     this.sent.set(seq, { timestamp: performance.now(), size });
   }
 
@@ -99,7 +105,7 @@ export class PacketTracker {
 
     // Cleanup
     this.sent.delete(seq);
-    this.acked.add(seq);
+    this._ackedCount++;
 
     return rtt;
   }
@@ -171,7 +177,7 @@ export class PacketTracker {
 
   /** Total packets ACKed. */
   get ackedCount(): number {
-    return this.acked.size;
+    return this._ackedCount;
   }
 
   /** Total bytes ACKed. */

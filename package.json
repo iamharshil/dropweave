@@ -1,6 +1,6 @@
 {
   "name": "dropweave-monorepo",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": true,
   "description": "Fast, anonymous peer-to-peer file transfer CLI over WebRTC. Zero-knowledge, OS-agnostic AirDrop alternative.",
   "workspaces": [

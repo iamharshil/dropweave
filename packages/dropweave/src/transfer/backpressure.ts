@@ -92,11 +92,54 @@ export class BackpressureController {
   /**
    * Wait for the buffer to drain (promise-based API).
    * Resolves immediately if not currently paused.
+   * If a dataChannel is provided, automatically listens to bufferedamountlow
+   * and polls bufferedAmount to eliminate deadlock risks.
    */
-  waitForDrain(): Promise<void> {
+  waitForDrain(dc?: {
+    bufferedAmount: number;
+    once?: (event: string, cb: () => void) => void;
+    removeListener?: (event: string, cb: () => void) => void;
+  }): Promise<void> {
     if (!this._isPaused) return Promise.resolve();
+
     return new Promise<void>((resolve) => {
-      this.drainCallbacks.push(resolve);
+      let resolved = false;
+      let timer: ReturnType<typeof setInterval> | null = null;
+
+      const onDrainDone = () => {
+        if (resolved) return;
+        resolved = true;
+        if (timer) clearInterval(timer);
+        if (dc?.removeListener) {
+          try {
+            dc.removeListener('bufferedamountlow', onDrainDone);
+          } catch {
+            // Ignored
+          }
+        }
+        resolve();
+      };
+
+      this.drainCallbacks.push(onDrainDone);
+
+      if (dc) {
+        this.checkDrain(dc.bufferedAmount);
+        if (!this._isPaused) {
+          onDrainDone();
+          return;
+        }
+
+        if (dc.once) {
+          dc.once('bufferedamountlow', () => {
+            this.checkDrain(dc.bufferedAmount);
+          });
+        }
+
+        // 10ms active drain poll to guarantee recovery under heavy load
+        timer = setInterval(() => {
+          this.checkDrain(dc.bufferedAmount);
+        }, 10);
+      }
     });
   }
 
