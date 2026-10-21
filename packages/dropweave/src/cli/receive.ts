@@ -17,6 +17,8 @@ import {
   renderError,
   writeProgress,
   clearProgress,
+  SpinnerAnimation,
+  resetProgressAnimation,
 } from './display.js';
 
 // ---------------------------------------------------------------------------
@@ -114,48 +116,64 @@ export async function receiveCommand(options: ReceiveCommandOptions): Promise<vo
       }
     });
 
-    // Join session
-    signaling.send('session:join', { code }, code);
-
-    // Wait for approval
-    const approved = await signaling.waitFor('session:approved', 30000);
-
+    let connectingAnim: SpinnerAnimation | null = null;
     if (!quiet) {
-      process.stdout.write('  Session approved. Connecting...\n');
+      connectingAnim = new SpinnerAnimation(`Connecting to session ${formatCode(code)}...`);
+      connectingAnim.start();
     }
 
-    // Wait for data channel
-    const dataChannel = await dataChannelPromise;
+    try {
+      // Join session
+      signaling.send('session:join', { code }, code);
 
-    // Detect connection mode
-    const mode = peer.detectConnectionMode();
-    if (!quiet) {
-      process.stdout.write(renderConnected(mode));
-    }
+      // Wait for approval
+      await signaling.waitFor('session:approved', 30000);
 
-    // Receive file
-    const result = await receiveFile({
-      dataChannel,
-      outputDir: resolvedOutputDir,
-      autoAccept: true,
-      onProgress: quiet ? undefined : (p: TransferProgress) => {
-        writeProgress(p);
-      },
-    });
+      connectingAnim?.stop();
+      if (!quiet) {
+        connectingAnim = new SpinnerAnimation('Session approved. Opening data channel...');
+        connectingAnim.start();
+      }
 
-    if (!quiet) {
-      clearProgress();
-      process.stdout.write(
-        renderCompleted(
-          result.fileName,
-          result.bytesReceived,
-          result.elapsed,
-          result.verified,
-        ),
-      );
-      console.log(`  Saved to: ${result.filePath}`);
-    } else {
-      console.log(JSON.stringify(result));
+      // Wait for data channel
+      const dataChannel = await dataChannelPromise;
+
+      connectingAnim?.stop();
+      connectingAnim = null;
+
+      // Detect connection mode
+      const mode = peer.detectConnectionMode();
+      if (!quiet) {
+        process.stdout.write(renderConnected(mode));
+        resetProgressAnimation();
+      }
+
+      // Receive file
+      const result = await receiveFile({
+        dataChannel,
+        outputDir: resolvedOutputDir,
+        autoAccept: true,
+        onProgress: quiet ? undefined : (p: TransferProgress) => {
+          writeProgress(p);
+        },
+      });
+
+      if (!quiet) {
+        clearProgress();
+        process.stdout.write(
+          renderCompleted(
+            result.fileName,
+            result.bytesReceived,
+            result.elapsed,
+            result.verified,
+          ),
+        );
+        console.log(`  Saved to: ${result.filePath}`);
+      } else {
+        console.log(JSON.stringify(result));
+      }
+    } finally {
+      connectingAnim?.stop();
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

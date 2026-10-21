@@ -43,15 +43,16 @@ If you have [Node.js](https://nodejs.org/) installed, you **don't need to instal
 npx dropweave send "path/to/your-file.zip"
 ```
 
-Dropweave generates an ephemeral 8-character connection code:
+Dropweave generates an ephemeral 8-character connection code with live radar beacon animation:
 ```text
   Sending: ./presentation.zip (18.4 MB)
 
-  ┌──────────────────────────────────────┐
-  │  Code: 7KMP-4Q9D                     │
-  │  Expires in: 10:00                   │
-  │  Waiting for peer...                 │
-  └──────────────────────────────────────┘
+  ┌──────────────────────────────────────────────┐
+  │  Code: 7KMP-4Q9D                             │
+  │  Expires in: 10:00                           │
+  └──────────────────────────────────────────────┘
+
+  ⠋ Waiting for peer...  📡 · · ● · · · · 📥  (09:59)
 ```
 
 Share that code (`7KMP-4Q9D`) with the receiver via chat, Slack, WhatsApp, email, or voice.
@@ -63,9 +64,9 @@ npx dropweave receive 7KMP-4Q9D
 
 ```text
   Joining session: 7KMP-4Q9D
-  Session approved. Connecting...
-  ✓ Peer connected (direct)
-  ████████████████████████  100%  18.4 MB/s  00:00 remaining
+  ⠋ Connecting to peer...
+  ✓ Peer connected (direct) ⚡
+  📤 ────📦─────► 📥  █████████░░░░░░░░░  50%  18.4 MB/s  00:01 remaining
 
   ✓ Complete: presentation.zip (18.4 MB in 1.1s) [verified]
   Saved to: /Users/alice/Downloads/presentation.zip
