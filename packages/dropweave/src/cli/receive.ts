@@ -59,6 +59,9 @@ export async function receiveCommand(options: ReceiveCommandOptions): Promise<vo
 
   const resolvedOutputDir = resolve(outputDir);
   const signaling = new SignalingClient({ url: signalingUrl });
+  signaling.on('error', () => {
+    // Handled via promise rejection and try/catch
+  });
   let peer: PeerConnectionWrapper | null = null;
 
   try {

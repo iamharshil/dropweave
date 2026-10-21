@@ -1,6 +1,6 @@
 {
   "name": "dropweave",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Fast, anonymous peer-to-peer file transfer CLI over WebRTC. Zero-knowledge, OS-agnostic AirDrop alternative. Direct data channels, no cloud storage.",
   "publishConfig": {
     "access": "public"

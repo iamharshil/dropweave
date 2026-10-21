@@ -93,4 +93,12 @@ describe('SignalingClient Error Handling & Edge Cases', () => {
 
     expect(client.listenerCount('message')).toBe(0);
   });
+
+  test('handleIncoming does not crash process when no error listener is attached', () => {
+    const client = new SignalingClient({ url: 'ws://localhost:9999/ws' });
+    // Calling handleIncoming with invalid data should not throw unhandled exception
+    expect(() => {
+      (client as any).handleIncoming('INVALID_NON_JSON_CONTENT{{{');
+    }).not.toThrow();
+  });
 });
