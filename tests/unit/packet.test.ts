@@ -82,4 +82,15 @@ describe('PacketTracker', () => {
     expect(snap.rttMs).not.toBeNull();
     expect(snap.throughputBps).not.toBeNull();
   });
+
+  test('bounds internal tracking map to prevent unbounded memory growth on large transfers', () => {
+    const tracker = new PacketTracker();
+    // Simulate sending 2000 packets without ACKs
+    for (let i = 0; i < 2000; i++) {
+      const seq = tracker.allocateSeq();
+      tracker.recordSent(seq, 65536);
+    }
+    // inFlightCount must be capped at 500 (MAX_IN_FLIGHT_TRACKING), not 2000
+    expect(tracker.inFlightCount).toBeLessThanOrEqual(500);
+  });
 });

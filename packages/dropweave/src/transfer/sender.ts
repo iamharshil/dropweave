@@ -7,7 +7,7 @@
 
 import { PacketType, PacketFlags, TransferState } from '../core/types.js';
 import type { TransferOffer, TransferAccept } from '../core/types.js';
-import { encodePacket, jsonPayload, parseJsonPayload } from '../core/protocol.js';
+import { encodePacket, decodePacket, jsonPayload, parseJsonPayload } from '../core/protocol.js';
 import { PacketTracker } from './packet.js';
 import { AdaptiveChunker } from './chunker.js';
 import { BackpressureController } from './backpressure.js';
@@ -95,37 +95,75 @@ export async function sendFile(options: SendOptions): Promise<SendResult> {
     const accept = parseJsonPayload<TransferAccept>(acceptMsg.payload);
     progress.setState(TransferState.Transferring);
 
-    // 4. Send file chunks
+    // 4. Send file chunks with adaptive sizing and backpressure
     let chunk: Uint8Array | null;
-    while ((chunk = await reader.readChunk(chunker.chunkSize)) !== null) {
-      // Backpressure check
-      if (!backpressure.shouldSend(dataChannel.bufferedAmount)) {
-        await backpressure.waitForDrain();
+    let chunkIndex = 0;
+    let transferCancelled = false;
+    let remoteError: string | null = null;
+
+    const onIncoming = (data: Uint8Array) => {
+      try {
+        const packet = decodePacket(data);
+        if (packet.header.type === PacketType.ChunkAck) {
+          tracker.recordAck(packet.header.seq);
+        } else if (packet.header.type === PacketType.Cancel) {
+          transferCancelled = true;
+        } else if (packet.header.type === PacketType.Error) {
+          const err = parseJsonPayload<{ message: string }>(packet.payload);
+          remoteError = err.message || 'Remote error';
+        }
+      } catch {
+        // Ignore malformed packets
       }
+    };
 
-      // Hash the chunk
-      hasher.update(chunk);
+    dataChannel.on('message', onIncoming);
 
-      // Determine flags
-      const isLast = reader.isComplete;
-      const flags = isLast
-        ? PacketFlags.LastChunk
-        : PacketFlags.None;
+    try {
+      while ((chunk = await reader.readChunk(chunker.chunkSize)) !== null) {
+        if (transferCancelled) {
+          progress.setState(TransferState.Cancelled);
+          throw new Error('Transfer cancelled by receiver');
+        }
+        if (remoteError) {
+          progress.setState(TransferState.Failed);
+          throw new Error(`Transfer failed: ${remoteError}`);
+        }
 
-      // Encode and send
-      const seq = tracker.allocateSeq();
-      const packet = encodePacket(PacketType.DataChunk, flags, seq, chunk);
-      dataChannel.sendBinary(packet);
-      tracker.recordSent(seq, chunk.byteLength);
+        // Backpressure check - pass dataChannel for event-driven drain wakeups
+        if (!backpressure.shouldSend(dataChannel.bufferedAmount)) {
+          await backpressure.waitForDrain(dataChannel);
+        }
 
-      // Update progress
-      progress.addBytes(chunk.byteLength);
+        // Hash the chunk
+        hasher.update(chunk);
 
-      // Feed adaptive chunker
-      chunker.onChunkSent(tracker, backpressure.isPaused);
+        // Determine flags: request ACK periodically or on last chunk to measure RTT & throughput
+        chunkIndex++;
+        const isLast = reader.isComplete;
+        const needsAck = isLast || chunkIndex % 8 === 0;
 
-      // Check backpressure for next iteration
-      backpressure.checkDrain(dataChannel.bufferedAmount);
+        let flags = PacketFlags.None;
+        if (isLast) flags |= PacketFlags.LastChunk;
+        if (needsAck) flags |= PacketFlags.AckRequired;
+
+        // Encode and send
+        const seq = tracker.allocateSeq();
+        const packet = encodePacket(PacketType.DataChunk, flags, seq, chunk);
+        dataChannel.sendBinary(packet);
+        tracker.recordSent(seq, chunk.byteLength);
+
+        // Update progress
+        progress.addBytes(chunk.byteLength);
+
+        // Feed adaptive chunker
+        chunker.onChunkSent(tracker, backpressure.isPaused);
+
+        // Check backpressure for next iteration
+        backpressure.checkDrain(dataChannel.bufferedAmount);
+      }
+    } finally {
+      dataChannel.removeListener('message', onIncoming);
     }
 
     // 5. Send checksum
@@ -171,7 +209,6 @@ export async function sendFile(options: SendOptions): Promise<SendResult> {
 // Helpers
 // ---------------------------------------------------------------------------
 
-import { decodePacket } from '../core/protocol.js';
 import type { Packet } from '../core/types.js';
 
 /**

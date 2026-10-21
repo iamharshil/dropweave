@@ -141,4 +141,27 @@ describe('protocol', () => {
       expect(rtt!).toBeGreaterThan(0);
     });
   });
+
+  describe('createChunkAckPacket & Zero-Copy Subarray', () => {
+    test('createChunkAckPacket creates valid zero-payload packet with seq', () => {
+      const { createChunkAckPacket } = require('../../packages/dropweave/src/core/protocol');
+      const ack = createChunkAckPacket(12345);
+      const decoded = decodePacket(ack);
+
+      expect(decoded.header.type).toBe(PacketType.ChunkAck);
+      expect(decoded.header.seq).toBe(12345);
+      expect(decoded.header.payloadLength).toBe(0);
+      expect(decoded.payload.byteLength).toBe(0);
+    });
+
+    test('decodePacket returns zero-copy subarray view sharing memory', () => {
+      const originalPayload = new Uint8Array([10, 20, 30, 40]);
+      const encoded = encodePacket(PacketType.DataChunk, PacketFlags.None, 1, originalPayload);
+      const decoded = decodePacket(encoded);
+
+      expect(decoded.payload.buffer).toBe(encoded.buffer);
+      expect(decoded.payload.byteOffset).toBe(PACKET_HEADER_SIZE);
+      expect(decoded.payload[0]).toBe(10);
+    });
+  });
 });

@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 
 /** Package version. */
-export const VERSION = '1.0.4';
+export const VERSION = '1.0.5';
 
 /** Size of the binary packet header in bytes. */
 export const PACKET_HEADER_SIZE = 12;
@@ -32,7 +32,7 @@ export const MAX_CHUNK_SIZE = 256 * 1024;
 export const INITIAL_CHUNK_SIZE = 16 * 1024;
 
 /** Number of chunks in the evaluation window for adaptive sizing. */
-export const CHUNK_EVAL_WINDOW = 20;
+export const CHUNK_EVAL_WINDOW = 10;
 
 /** Factor to increase chunk size when conditions are good. */
 export const CHUNK_INCREASE_FACTOR = 2.0;

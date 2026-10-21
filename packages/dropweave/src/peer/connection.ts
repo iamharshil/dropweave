@@ -61,9 +61,35 @@ export class DataChannelWrapper extends EventEmitter {
       if (typeof msg === 'string') {
         this.emit('message', new TextEncoder().encode(msg));
       } else {
-        this.emit('message', new Uint8Array(msg));
+        // Zero-copy view directly referencing the native buffer
+        this.emit(
+          'message',
+          new Uint8Array(msg.buffer, msg.byteOffset, msg.byteLength),
+        );
       }
     });
+
+    // Native buffer drain listener for non-blocking backpressure
+    try {
+      if (typeof dc.onBufferedAmountLow === 'function') {
+        dc.onBufferedAmountLow(() => {
+          this.emit('bufferedamountlow');
+        });
+      }
+    } catch {
+      // Not supported on mock / web shim
+    }
+  }
+
+  /** Set low watermark threshold for native bufferedamountlow events. */
+  setBufferedAmountLowThreshold(thresholdBytes: number): void {
+    try {
+      if (typeof this.dc.setBufferedAmountLowThreshold === 'function') {
+        this.dc.setBufferedAmountLowThreshold(thresholdBytes);
+      }
+    } catch {
+      // Ignored if not supported
+    }
   }
 
   /** Whether the data channel is currently open. */
@@ -80,11 +106,12 @@ export class DataChannelWrapper extends EventEmitter {
     }
   }
 
-  /** Send binary data over the data channel. */
+  /** Send binary data over the data channel with zero-copy Buffer wrapping. */
   sendBinary(data: Uint8Array): boolean {
     if (!this._isOpen) return false;
     try {
-      this.dc.sendMessageBinary(Buffer.from(data));
+      const buf = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+      this.dc.sendMessageBinary(buf);
       return true;
     } catch {
       return false;

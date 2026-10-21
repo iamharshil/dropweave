@@ -30,6 +30,7 @@ export class ProgressTracker {
   private speedSamples: number[] = [];
   private lastSampleTime: number;
   private lastSampleBytes = 0;
+  private lastEmitTime = 0;
   private readonly maxSpeedSamples = 10;
 
   constructor(transferId: string, totalBytes: number) {
@@ -83,7 +84,12 @@ export class ProgressTracker {
       this.lastSampleBytes = this._bytesTransferred;
     }
 
-    this.emit();
+    // Throttle progress emissions to ~15 FPS (every 66ms) or on completion
+    // to prevent terminal stdout saturation and high CPU usage during transfers
+    if (this._bytesTransferred >= this.totalBytes || (now - this.lastEmitTime) >= 66) {
+      this.lastEmitTime = now;
+      this.emit();
+    }
   }
 
   /** Build and return the current progress snapshot. */

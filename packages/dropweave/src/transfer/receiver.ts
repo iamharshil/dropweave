@@ -5,7 +5,13 @@
 
 import { PacketType, PacketFlags, TransferState } from '../core/types.js';
 import type { TransferOffer, TransferAccept, TransferProgress, Packet } from '../core/types.js';
-import { encodePacket, decodePacket, jsonPayload, parseJsonPayload } from '../core/protocol.js';
+import {
+  encodePacket,
+  decodePacket,
+  jsonPayload,
+  parseJsonPayload,
+  createChunkAckPacket,
+} from '../core/protocol.js';
 import { IntegrityHasher, hashesEqual } from './integrity.js';
 import { ProgressTracker } from './progress.js';
 import { FileWriter } from '../adapters/node/file-writer.js';
@@ -136,6 +142,11 @@ export async function receiveFile(options: ReceiveOptions): Promise<ReceiveResul
             switch (packet.header.type) {
               case PacketType.DataChunk: {
                 resetTimeout();
+
+                // If sender requested ACK for RTT/bandwidth calibration, reply immediately
+                if ((packet.header.flags & PacketFlags.AckRequired) !== 0) {
+                  dataChannel.sendBinary(createChunkAckPacket(packet.header.seq));
+                }
 
                 // Write chunk to file
                 await writer.writeChunk(packet.payload);

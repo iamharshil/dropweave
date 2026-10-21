@@ -40,8 +40,8 @@ export function encodePacket(
     );
   }
 
-  const buffer = new ArrayBuffer(PACKET_HEADER_SIZE + payload.byteLength);
-  const view = new DataView(buffer);
+  const out = new Uint8Array(PACKET_HEADER_SIZE + payload.byteLength);
+  const view = new DataView(out.buffer, out.byteOffset, out.byteLength);
 
   // Header
   view.setUint16(0, PACKET_MAGIC);      // Magic (2 bytes)
@@ -51,7 +51,6 @@ export function encodePacket(
   view.setUint32(8, payload.byteLength); // PayloadLen (4 bytes, big-endian)
 
   // Payload
-  const out = new Uint8Array(buffer);
   if (payload.byteLength > 0) {
     out.set(payload, PACKET_HEADER_SIZE);
   }
@@ -65,6 +64,7 @@ export function encodePacket(
 
 /**
  * Decode a binary buffer into a Packet (header + payload).
+ * Uses zero-copy subarray view for ultra-fast throughput without memory bloat.
  *
  * @throws If the buffer is too short, magic is wrong, or payload length mismatches.
  */
@@ -100,7 +100,8 @@ export function decodePacket(data: Uint8Array): Packet {
     );
   }
 
-  const payload = data.slice(PACKET_HEADER_SIZE, expectedTotal);
+  // Zero-copy view directly referencing the underlying buffer segment
+  const payload = data.subarray(PACKET_HEADER_SIZE, expectedTotal);
 
   return {
     header: { magic, type, flags, seq, payloadLength },
@@ -159,4 +160,9 @@ export function extractRttFromPong(payload: Uint8Array): number | null {
   );
   const sentAt = view.getFloat64(0);
   return performance.now() - sentAt;
+}
+
+/** Create a lightweight 12-byte CHUNK_ACK packet. */
+export function createChunkAckPacket(seq: number): Uint8Array {
+  return encodePacket(PacketType.ChunkAck, PacketFlags.None, seq);
 }
