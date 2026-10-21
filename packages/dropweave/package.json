@@ -1,7 +1,7 @@
 {
   "name": "dropweave",
-  "version": "1.0.1",
-  "description": "Anonymous peer-to-peer file transfer CLI. Zero-knowledge. Direct WebRTC connection.",
+  "version": "1.0.2",
+  "description": "Fast, anonymous peer-to-peer file transfer CLI over WebRTC. Zero-knowledge, OS-agnostic AirDrop alternative. Direct data channels, no cloud storage.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -44,19 +44,32 @@
     "peer-to-peer",
     "webrtc",
     "cli",
-    "anonymous",
+    "terminal",
+    "airdrop-alternative",
+    "magic-wormhole",
     "zero-knowledge",
+    "anonymous",
+    "privacy",
+    "direct-transfer",
+    "file-sharing",
+    "cross-platform",
+    "os-agnostic",
     "data-channel",
-    "crockford-base32"
+    "backpressure",
+    "sha256",
+    "crockford-base32",
+    "developer-tools"
   ],
   "author": "Harshil (https://github.com/iamharshil)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/iamharshil/dropweave.git"
+    "url": "git+https://github.com/iamharshil/dropweave.git",
+    "directory": "packages/dropweave"
   },
   "homepage": "https://github.com/iamharshil/dropweave#readme",
   "bugs": {
     "url": "https://github.com/iamharshil/dropweave/issues"
-  }
+  },
+  "funding": "https://github.com/sponsors/iamharshil"
 }

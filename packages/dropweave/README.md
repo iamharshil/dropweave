@@ -9,6 +9,8 @@ No cloud storage. No user accounts. No logs. No traces.
 
 [![CI](https://github.com/iamharshil/dropweave/actions/workflows/ci.yml/badge.svg)](https://github.com/iamharshil/dropweave/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/dropweave.svg?style=flat&color=CB3837)](https://www.npmjs.com/package/dropweave)
+[![npm downloads](https://img.shields.io/npm/dm/dropweave.svg?style=flat&color=3178C6)](https://www.npmjs.com/package/dropweave)
+[![GitHub stars](https://img.shields.io/github/stars/iamharshil/dropweave?style=flat&color=brightgreen)](https://github.com/iamharshil/dropweave)
 [![Platform: OS Agnostic](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-blue.svg)](https://github.com/iamharshil/dropweave)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -65,6 +67,16 @@ Host (Sender)                                       Peer (Receiver)
 - 🛡️ **Streaming SHA-256 Integrity Verification**: Hashes data on-the-fly while reading and writing. Transfers complete only after the receiver confirms a byte-for-byte cryptographic checksum match.
 - 🗄️ **Defensive Path Safety & Atomic Writes**: Protects against path traversal attacks. Incomplete transfers are written to temporary `.dwpart` files and atomically renamed only when verified.
 - 🤖 **Unix-Friendly & Scriptable**: Includes `--quiet` flag with JSON output for integration into CI/CD and automation scripts.
+
+---
+
+## 🎯 When to Use Dropweave (Common Scenarios)
+
+- 🚀 **Transferring Huge Files (GBs) Fast**: Skip uploading for 30 minutes to Google Drive or WeTransfer just for the recipient to spend another 30 minutes downloading. Stream file bytes directly at maximum network throughput.
+- 🍏 🪟 🐧 **Cross-Platform File Sharing (AirDrop Alternative)**: AirDrop only works between Apple devices. Dropweave gives you seamless peer-to-peer file transfer between **macOS, Windows, and Linux** with a simple 8-character code.
+- 🔒 **Confidential & Sensitive Data**: Transfer private database backups, SSH keys, financial reports, or code repositories without trusting third-party cloud storage providers. Zero-knowledge signaling ensures your files never touch any intermediary server.
+- 🤖 **DevOps & Server-to-Server Transfers**: Send build artifacts, Docker images, or archives directly between servers, staging environments, or developer laptops from the terminal.
+- 🏠 **Local Network Offline Transfers**: Use the `--no-stun` flag to transfer files purely over your local home/office Wi-Fi or LAN without any external traffic.
 
 ---
 
