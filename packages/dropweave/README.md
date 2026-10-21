@@ -9,6 +9,7 @@ No cloud storage. No user accounts. No logs. No traces.
 
 [![CI](https://github.com/iamharshil/dropweave/actions/workflows/ci.yml/badge.svg)](https://github.com/iamharshil/dropweave/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/dropweave.svg?style=flat&color=CB3837)](https://www.npmjs.com/package/dropweave)
+[![Platform: OS Agnostic](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-blue.svg)](https://github.com/iamharshil/dropweave)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Bun](https://img.shields.io/badge/Bun-1.4+-000000?logo=bun&logoColor=white)](https://bun.sh/)
@@ -55,6 +56,7 @@ Host (Sender)                                       Peer (Receiver)
 
 ## ✨ Features
 
+- 🌍 **100% OS Agnostic**: Seamlessly transfer files between **macOS**, **Windows**, and **Linux** without device barriers or ecosystem lock-in.
 - 🔒 **Direct Encrypted Transport**: Encrypted with WebRTC DTLS / SCTP data channels. File bytes travel directly between peers.
 - 👁️ **Zero-Knowledge Signaling**: The signaling server only pairs peers using in-memory random codes. It **never touches file chunks**, stores no logs, and does not record IP addresses.
 - 🔑 **8-Character Pairing Codes**: Crockford Base32 alphabet avoids ambiguous characters (`0/O`, `1/I/L`). Auto-normalizes dashes, spaces, and lowercase input.
@@ -71,6 +73,7 @@ Host (Sender)                                       Peer (Receiver)
 | Feature | Dropweave | Magic-Wormhole | WeTransfer / GDrive | AirDrop |
 | :--- | :---: | :---: | :---: | :---: |
 | **Direct P2P Transfer** | ✅ Yes (WebRTC) | ✅ Yes (TCP) | ❌ Cloud Upload | ✅ Local Wi-Fi/BT |
+| **OS Agnostic (Mac, Win, Linux)** | ✅ All Platforms | ✅ All Platforms | ✅ Web Browser | ❌ Apple Only |
 | **Cross-Network (NAT/Firewall)** | ✅ STUN / TURN | ⚠️ Relay Server | ✅ Yes | ❌ Local LAN Only |
 | **Zero-Knowledge Architecture** | ✅ Ephemeral RAM | ✅ PAKE | ❌ Cloud Inspects | ⚠️ Apple ID Linked |
 | **No Account / Signup Needed** | ✅ Zero Auth | ✅ Zero Auth | ❌ Required | ⚠️ Apple Ecosystem |
@@ -80,42 +83,40 @@ Host (Sender)                                       Peer (Receiver)
 
 ---
 
-## 📦 Installation
+## 💻 OS Agnostic — Works Everywhere
 
-### Global CLI
+Dropweave is completely **cross-platform and operating-system agnostic**. You can send and receive files across different operating systems without compatibility issues:
 
-```bash
-# Using npm
-npm install -g dropweave
+| Sender Device | ➡️ | Receiver Device | Compatibility |
+| :---: | :---: | :---: | :---: |
+| 🍏 **macOS** | ➡️ | 🪟 **Windows** | ✅ Supported |
+| 🪟 **Windows** | ➡️ | 🐧 **Linux** | ✅ Supported |
+| 🐧 **Linux** | ➡️ | 🍏 **macOS** | ✅ Supported |
+| 🍏 **macOS** | ➡️ | 🍏 **macOS** | ✅ Supported |
+| 🪟 **Windows** | ➡️ | 🪟 **Windows** | ✅ Supported |
 
-# Using bun
-bun add -g dropweave
-
-# Or run directly with npx
-npx dropweave --help
-```
-
-### Library / Project Dependency
-
-```bash
-# Using npm
-npm install dropweave
-
-# Using bun
-bun add dropweave
-```
+- **macOS**: Apple Silicon (M1/M2/M3/M4) & Intel
+- **Windows**: Windows 10/11 (PowerShell, Command Prompt, Windows Terminal)
+- **Linux**: Ubuntu, Debian, Fedora, Arch, Alpine, etc.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 How to Use (For Beginners & Non-Tech Users!)
 
-### 1. Send a File
+You do not need to be a programmer or know complicated developer setups.
+
+### ⚡ Option 1: Zero-Install (Fastest & Easiest!)
+
+If you have [Node.js](https://nodejs.org/) installed, you **don't need to install anything at all**. Run Dropweave directly using `npx`:
+
+#### 📤 On the Sender Computer:
+Open your command terminal (Terminal on Mac/Linux, PowerShell or Command Prompt on Windows) and run:
 
 ```bash
-dropweave send ./presentation.zip
+npx dropweave send "path/to/your-file.zip"
 ```
 
-Output:
+Dropweave will generate an ephemeral 8-character connection code:
 ```text
   Sending: ./presentation.zip (18.4 MB)
 
@@ -124,19 +125,15 @@ Output:
   │  Expires in: 10:00                   │
   │  Waiting for peer...                 │
   └──────────────────────────────────────┘
-
-  ✓ Peer connected (direct)
-  ████████████████████░░░░  78%  14.2 MB/s  00:02 remaining
-
-  ✓ Complete: presentation.zip (18.4 MB in 1.3s) [verified]
 ```
 
-### 2. Receive a File
+Share that code (`7KMP-4Q9D`) with your friend or colleague via message, Slack, WhatsApp, or voice.
 
-On another computer (across the room or across the globe):
+#### 📥 On the Receiver Computer:
+Open the terminal on the receiving computer and run:
 
 ```bash
-dropweave receive 7KMP4Q9D
+npx dropweave receive 7KMP-4Q9D
 ```
 
 Output:
@@ -144,11 +141,52 @@ Output:
   Joining session: 7KMP-4Q9D
   Session approved. Connecting...
   ✓ Peer connected (direct)
-  ████████████████████████  100%  14.2 MB/s  00:00 remaining
+  ████████████████████████  100%  18.4 MB/s  00:00 remaining
 
-  ✓ Complete: presentation.zip (18.4 MB in 1.3s) [verified]
+  ✓ Complete: presentation.zip (18.4 MB in 1.1s) [verified]
   Saved to: /Users/alice/Downloads/presentation.zip
 ```
+
+File bytes travel directly device-to-device with real-time progress and cryptographic checksum verification.
+
+---
+
+### 📥 Option 2: Install Permanently (For Everyday Use)
+
+If you use Dropweave frequently and want to type `dropweave` without `npx`:
+
+```bash
+# Using npm (included automatically with Node.js)
+npm install -g dropweave
+
+# Using bun
+bun add -g dropweave
+```
+
+Now you can simply run:
+```bash
+dropweave send ./my-video.mp4
+dropweave receive 7KMP-4Q9D
+```
+
+#### Library / Project Dependency (For Developers)
+
+```bash
+npm install dropweave
+# or
+bun add dropweave
+```
+
+---
+
+### ❓ Getting Started: What do I need first?
+
+The only prerequisite is **Node.js** (version 18 or newer), which takes 1 minute to set up:
+
+1. Visit [nodejs.org](https://nodejs.org/).
+2. Click and download the recommended **LTS (Long Term Support)** version.
+3. Open the downloaded installer and follow the prompt (*Next*, *Finish*).
+4. Open your terminal (Terminal on Mac, PowerShell on Windows) and type `npx dropweave --help`!
 
 ---
 
