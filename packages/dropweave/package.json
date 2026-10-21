@@ -61,7 +61,7 @@
     "developer-tools"
   ],
   "author": "Harshil (https://github.com/iamharshil)",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/iamharshil/dropweave.git",

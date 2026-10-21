@@ -12,21 +12,125 @@ No cloud storage. No user accounts. No logs. No traces.
 [![npm downloads](https://img.shields.io/npm/dm/dropweave.svg?style=flat&color=3178C6)](https://www.npmjs.com/package/dropweave)
 [![GitHub stars](https://img.shields.io/github/stars/iamharshil/dropweave?style=flat&color=brightgreen)](https://github.com/iamharshil/dropweave)
 [![Platform: OS Agnostic](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-blue.svg)](https://github.com/iamharshil/dropweave)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Bun](https://img.shields.io/badge/Bun-1.4+-000000?logo=bun&logoColor=white)](https://bun.sh/)
 [![WebRTC](https://img.shields.io/badge/WebRTC-node--datachannel-333333?logo=webrtc&logoColor=white)](https://webrtc.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-[Quick Start](#-quick-start) •
+[Quick Start](#-quick-start-installation--usage) •
 [Features](#-features) •
-[Architecture](#-architecture) •
+[Architecture](#-architecture--protocol) •
 [CLI Reference](#-cli-reference) •
 [TypeScript API](#-typescript-api) •
 [Signaling Server](#-self-hosting-signaling) •
 [Security Model](#-security--privacy-model)
 
 </div>
+
+---
+
+## ⚡ Quick Start: Installation & Usage
+
+Send and receive files directly in under 30 seconds across macOS, Windows, and Linux.
+
+### 🚀 1. Instant Transfer (Zero Install Needed!)
+
+If you have [Node.js](https://nodejs.org/) installed, you **don't need to install anything at all**. Run Dropweave directly using `npx`:
+
+#### 📤 On the Sender Computer:
+```bash
+npx dropweave send "path/to/your-file.zip"
+```
+
+Dropweave generates an ephemeral 8-character connection code:
+```text
+  Sending: ./presentation.zip (18.4 MB)
+
+  ┌──────────────────────────────────────┐
+  │  Code: 7KMP-4Q9D                     │
+  │  Expires in: 10:00                   │
+  │  Waiting for peer...                 │
+  └──────────────────────────────────────┘
+```
+
+Share that code (`7KMP-4Q9D`) with the receiver via chat, Slack, WhatsApp, email, or voice.
+
+#### 📥 On the Receiver Computer:
+```bash
+npx dropweave receive 7KMP-4Q9D
+```
+
+```text
+  Joining session: 7KMP-4Q9D
+  Session approved. Connecting...
+  ✓ Peer connected (direct)
+  ████████████████████████  100%  18.4 MB/s  00:00 remaining
+
+  ✓ Complete: presentation.zip (18.4 MB in 1.1s) [verified]
+  Saved to: /Users/alice/Downloads/presentation.zip
+```
+
+File bytes travel directly device-to-device with real-time speed progress and cryptographic SHA-256 verification.
+
+---
+
+### 📦 2. Install Permanently as a CLI Tool (Recommended for Everyday Use)
+
+If you use Dropweave frequently and want to type `dropweave` directly without `npx`:
+
+```bash
+# Using npm (included automatically with Node.js)
+npm install -g dropweave
+
+# Or using bun
+bun add -g dropweave
+```
+
+Now you can simply run:
+```bash
+# Send any file
+dropweave send ./my-video.mp4
+
+# Receive using the 8-character code
+dropweave receive 7KMP-4Q9D
+```
+
+---
+
+### 💻 3. Use as a TypeScript / Node.js Library (For Developers)
+
+Add Dropweave directly into your own Node.js or TypeScript projects:
+
+```bash
+npm install dropweave
+# or
+bun add dropweave
+```
+
+```typescript
+import { createTransfer } from 'dropweave';
+
+// Sender: create session and stream directly
+const transfer = createTransfer();
+const session = await transfer.openSession();
+console.log(`Share code with peer: ${session.code}`);
+
+await session.waitForPeer();
+await transfer.send('./data.zip');
+await transfer.close();
+```
+
+---
+
+### ❓ What do I need first? (Prerequisites)
+
+The only prerequisite is **Node.js** (version 18 or newer), which takes 1 minute to set up:
+
+1. Visit [nodejs.org](https://nodejs.org/).
+2. Download the recommended **LTS (Long Term Support)** version.
+3. Open the installer and follow the prompt (*Next*, *Finish*).
+4. Open your terminal (Terminal on Mac/Linux, PowerShell or Command Prompt on Windows) and run `npx dropweave --help`!
 
 ---
 
@@ -110,95 +214,6 @@ Dropweave is completely **cross-platform and operating-system agnostic**. You ca
 - **macOS**: Apple Silicon (M1/M2/M3/M4) & Intel
 - **Windows**: Windows 10/11 (PowerShell, Command Prompt, Windows Terminal)
 - **Linux**: Ubuntu, Debian, Fedora, Arch, Alpine, etc.
-
----
-
-## 🚀 How to Use (For Beginners & Non-Tech Users!)
-
-You do not need to be a programmer or know complicated developer setups.
-
-### ⚡ Option 1: Zero-Install (Fastest & Easiest!)
-
-If you have [Node.js](https://nodejs.org/) installed, you **don't need to install anything at all**. Run Dropweave directly using `npx`:
-
-#### 📤 On the Sender Computer:
-Open your command terminal (Terminal on Mac/Linux, PowerShell or Command Prompt on Windows) and run:
-
-```bash
-npx dropweave send "path/to/your-file.zip"
-```
-
-Dropweave will generate an ephemeral 8-character connection code:
-```text
-  Sending: ./presentation.zip (18.4 MB)
-
-  ┌──────────────────────────────────────┐
-  │  Code: 7KMP-4Q9D                     │
-  │  Expires in: 10:00                   │
-  │  Waiting for peer...                 │
-  └──────────────────────────────────────┘
-```
-
-Share that code (`7KMP-4Q9D`) with your friend or colleague via message, Slack, WhatsApp, or voice.
-
-#### 📥 On the Receiver Computer:
-Open the terminal on the receiving computer and run:
-
-```bash
-npx dropweave receive 7KMP-4Q9D
-```
-
-Output:
-```text
-  Joining session: 7KMP-4Q9D
-  Session approved. Connecting...
-  ✓ Peer connected (direct)
-  ████████████████████████  100%  18.4 MB/s  00:00 remaining
-
-  ✓ Complete: presentation.zip (18.4 MB in 1.1s) [verified]
-  Saved to: /Users/alice/Downloads/presentation.zip
-```
-
-File bytes travel directly device-to-device with real-time progress and cryptographic checksum verification.
-
----
-
-### 📥 Option 2: Install Permanently (For Everyday Use)
-
-If you use Dropweave frequently and want to type `dropweave` without `npx`:
-
-```bash
-# Using npm (included automatically with Node.js)
-npm install -g dropweave
-
-# Using bun
-bun add -g dropweave
-```
-
-Now you can simply run:
-```bash
-dropweave send ./my-video.mp4
-dropweave receive 7KMP-4Q9D
-```
-
-#### Library / Project Dependency (For Developers)
-
-```bash
-npm install dropweave
-# or
-bun add dropweave
-```
-
----
-
-### ❓ Getting Started: What do I need first?
-
-The only prerequisite is **Node.js** (version 18 or newer), which takes 1 minute to set up:
-
-1. Visit [nodejs.org](https://nodejs.org/).
-2. Click and download the recommended **LTS (Long Term Support)** version.
-3. Open the downloaded installer and follow the prompt (*Next*, *Finish*).
-4. Open your terminal (Terminal on Mac, PowerShell on Windows) and type `npx dropweave --help`!
 
 ---
 
@@ -434,7 +449,7 @@ cd dropweave
 # Install dependencies
 bun install
 
-# Run entire test suite (89 tests: unit, integration, e2e)
+# Run entire test suite (124 tests: unit, integration, fuzzing, e2e)
 bun test
 
 # Run TypeScript type check
@@ -448,6 +463,6 @@ bun run build
 
 ## 📄 License
 
-MIT © [Harshil](https://github.com/iamharshil)
+GNU General Public License v3.0 (GPL-3.0) © [Harshil](https://github.com/iamharshil)
 
-Licensed under the [MIT License](LICENSE).
+This program is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License v3.0** as published by the Free Software Foundation. See the [LICENSE](LICENSE) file for the full license text.
