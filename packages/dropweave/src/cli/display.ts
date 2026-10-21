@@ -1,7 +1,8 @@
 /**
- * CLI progress display — minimal, fast, Unix-style.
+ * CLI progress display — interactive, animated, Unix-friendly.
  *
- * Renders a progress bar with speed and ETA to stdout.
+ * Renders miniature wire animations for peer transfers, animated beacons
+ * while waiting for pairing, and smooth status spinners.
  * No heavy TUI dependencies.
  */
 
@@ -31,12 +32,20 @@ export function formatTime(seconds: number): string {
 }
 
 // ---------------------------------------------------------------------------
-// Progress Bar Renderer
+// Miniature Transfer Animation & Progress Bar
 // ---------------------------------------------------------------------------
 
-const BAR_WIDTH = 24;
+const BAR_WIDTH = 18;
+const WIRE_LENGTH = 10;
 const FILLED = '█';
 const EMPTY = '░';
+
+let transferFrame = 0;
+
+/** Reset the progress wire animation frame */
+export function resetProgressAnimation(): void {
+  transferFrame = 0;
+}
 
 export function renderProgressBar(progress: TransferProgress): string {
   const pct = Math.min(100, Math.max(0, progress.percentage));
@@ -48,7 +57,14 @@ export function renderProgressBar(progress: TransferProgress): string {
   const speed = formatSpeed(progress.speed);
   const eta = progress.eta !== null ? formatTime(progress.eta) : '--:--';
 
-  return `  ${bar} ${pctStr}  ${speed.padStart(10)}  ${eta} remaining`;
+  // Miniature wire animation: packet moves smoothly between sender and receiver
+  transferFrame++;
+  const pos = pct >= 100 ? WIRE_LENGTH - 1 : (transferFrame % WIRE_LENGTH);
+  const wireBefore = '─'.repeat(pos);
+  const wireAfter = '─'.repeat(WIRE_LENGTH - 1 - pos);
+  const wire = `📤 ${wireBefore}📦${wireAfter}► 📥`;
+
+  return `  ${wire}  ${bar} ${pctStr}  ${speed.padStart(9)}  ${eta} remaining`;
 }
 
 /**
@@ -67,7 +83,101 @@ export function clearProgress(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Status Box
+// Peer Waiting Animation (Beacon / Miniature Pulse)
+// ---------------------------------------------------------------------------
+
+export class PeerWaitingAnimation {
+  private timer: NodeJS.Timeout | null = null;
+  private startTime: number = 0;
+  private frame: number = 0;
+  private readonly expiresIn: number;
+
+  constructor(expiresIn: number) {
+    this.expiresIn = expiresIn;
+  }
+
+  start(): void {
+    if (!process.stdout.isTTY) {
+      process.stdout.write('  Waiting for peer...\n');
+      return;
+    }
+    this.startTime = Date.now();
+    this.frame = 0;
+    this.render();
+    this.timer = setInterval(() => {
+      this.frame++;
+      this.render();
+    }, 90);
+  }
+
+  private render(): void {
+    const elapsedSec = Math.floor((Date.now() - this.startTime) / 1000);
+    const remaining = Math.max(0, this.expiresIn - elapsedSec);
+    const spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'][this.frame % 10];
+    const pulsePositions = 7;
+    const pulseIdx = this.frame % pulsePositions;
+    const pulseDots = Array(pulsePositions).fill('·');
+    pulseDots[pulseIdx] = '●';
+    const pulseStr = pulseDots.join(' ');
+
+    const line = `  ${spinner} Waiting for peer...  📡 ${pulseStr} 📥  (${formatTime(remaining)})`;
+    process.stdout.write(`\r${line}`);
+  }
+
+  stop(): void {
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+    if (process.stdout.isTTY) {
+      clearProgress();
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Spinner Animation (Generic Connecting / Status)
+// ---------------------------------------------------------------------------
+
+export class SpinnerAnimation {
+  private timer: NodeJS.Timeout | null = null;
+  private frame: number = 0;
+  private readonly text: string;
+
+  constructor(text: string) {
+    this.text = text;
+  }
+
+  start(): void {
+    if (!process.stdout.isTTY) {
+      process.stdout.write(`  ${this.text}\n`);
+      return;
+    }
+    const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+    this.render(frames[0]);
+    this.timer = setInterval(() => {
+      this.frame++;
+      this.render(frames[this.frame % frames.length]);
+    }, 80);
+  }
+
+  private render(spinner: string): void {
+    process.stdout.write(`\r  ${spinner} ${this.text}`);
+  }
+
+  stop(): void {
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+    if (process.stdout.isTTY) {
+      clearProgress();
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Status Box & Results
 // ---------------------------------------------------------------------------
 
 export function renderSessionBox(code: string, expiresIn: number): string {
@@ -77,11 +187,10 @@ export function renderSessionBox(code: string, expiresIn: number): string {
 
   const lines = [
     '',
-    '  ┌──────────────────────────────────────┐',
-    `  │  Code: ${formattedCode.padEnd(29)}│`,
-    `  │  Expires in: ${formatTime(expiresIn).padEnd(23)}│`,
-    '  │  Waiting for peer...                 │',
-    '  └──────────────────────────────────────┘',
+    '  ┌──────────────────────────────────────────────┐',
+    `  │  Code: ${formattedCode.padEnd(38)}│`,
+    `  │  Expires in: ${formatTime(expiresIn).padEnd(32)}│`,
+    '  └──────────────────────────────────────────────┘',
     '',
   ];
 

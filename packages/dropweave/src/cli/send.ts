@@ -19,6 +19,9 @@ import {
   writeProgress,
   clearProgress,
   formatBytes,
+  PeerWaitingAnimation,
+  SpinnerAnimation,
+  resetProgressAnimation,
 } from './display.js';
 
 // ---------------------------------------------------------------------------
@@ -76,100 +79,115 @@ export async function sendCommand(options: SendCommandOptions): Promise<void> {
     const code = (created.payload as { code: string }).code;
     const expiresIn = (created.payload as { expiresIn: number }).expiresIn;
 
+    let waitingAnim: PeerWaitingAnimation | null = null;
+    let connectingAnim: SpinnerAnimation | null = null;
+
     if (quiet) {
       // JSON mode for scripting
       console.log(JSON.stringify({ code, expiresIn }));
     } else {
       process.stdout.write(renderSessionBox(code, expiresIn));
+      waitingAnim = new PeerWaitingAnimation(expiresIn);
+      waitingAnim.start();
     }
 
-    // Wait for peer to join
-    await signaling.waitFor('session:join-requested', timeout * 1000);
+    try {
+      // Wait for peer to join
+      await signaling.waitFor('session:join-requested', timeout * 1000);
+      waitingAnim?.stop();
+      waitingAnim = null;
 
-    // Auto-approve (anonymous 1:1 mode)
-    signaling.send('session:approve', undefined, code);
-    await signaling.waitFor('session:approved', 10000);
+      // Auto-approve (anonymous 1:1 mode)
+      signaling.send('session:approve', undefined, code);
+      await signaling.waitFor('session:approved', 10000);
 
-    if (!quiet) {
-      clearProgress();
-      process.stdout.write('  Connecting to peer...');
-    }
-
-    // Set up WebRTC
-    peer = new PeerConnectionWrapper({ iceServers });
-
-    // Set up signaling relay
-    peer.on('local-description', (sdp, type) => {
-      signaling.send('peer:offer', { sdp, type }, code);
-    });
-
-    peer.on('local-candidate', (candidate, mid) => {
-      signaling.send('peer:ice-candidate', { candidate, mid }, code);
-    });
-
-    // Listen for remote signaling
-    signaling.on('message', (msg: SignalingMessage) => {
-      if (msg.type === 'peer:answer' && msg.payload) {
-        peer!.setRemoteDescription(
-          msg.payload.sdp as string,
-          msg.payload.type as string,
-        );
-      } else if (msg.type === 'peer:ice-candidate' && msg.payload) {
-        peer!.addRemoteCandidate(
-          msg.payload.candidate as string,
-          msg.payload.mid as string,
-        );
+      if (!quiet) {
+        connectingAnim = new SpinnerAnimation('Connecting to peer...');
+        connectingAnim.start();
       }
-    });
 
-    // Create data channel (triggers local-description generation)
-    const dataChannel = peer.createDataChannel('transfer');
+      // Set up WebRTC
+      peer = new PeerConnectionWrapper({ iceServers });
 
-    // Wait for data channel to open
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error('Data channel open timeout'));
-      }, 30000);
-
-      dataChannel.on('open', () => {
-        clearTimeout(timeout);
-        resolve();
+      // Set up signaling relay
+      peer.on('local-description', (sdp, type) => {
+        signaling.send('peer:offer', { sdp, type }, code);
       });
 
-      dataChannel.on('error', (err: Error) => {
-        clearTimeout(timeout);
-        reject(err);
+      peer.on('local-candidate', (candidate, mid) => {
+        signaling.send('peer:ice-candidate', { candidate, mid }, code);
       });
-    });
 
-    // Detect connection mode
-    const mode = peer.detectConnectionMode();
-    if (!quiet) {
-      clearProgress();
-      process.stdout.write(renderConnected(mode));
-    }
+      // Listen for remote signaling
+      signaling.on('message', (msg: SignalingMessage) => {
+        if (msg.type === 'peer:answer' && msg.payload) {
+          peer!.setRemoteDescription(
+            msg.payload.sdp as string,
+            msg.payload.type as string,
+          );
+        } else if (msg.type === 'peer:ice-candidate' && msg.payload) {
+          peer!.addRemoteCandidate(
+            msg.payload.candidate as string,
+            msg.payload.mid as string,
+          );
+        }
+      });
 
-    // Send file
-    const result = await sendFile({
-      filePath: resolvedPath,
-      dataChannel,
-      onProgress: quiet ? undefined : (p: TransferProgress) => {
-        writeProgress(p);
-      },
-    });
+      // Create data channel (triggers local-description generation)
+      const dataChannel = peer.createDataChannel('transfer');
 
-    if (!quiet) {
-      clearProgress();
-      process.stdout.write(
-        renderCompleted(
-          filePath,
-          result.bytesTransferred,
-          result.elapsed,
-          result.verified,
-        ),
-      );
-    } else {
-      console.log(JSON.stringify(result));
+      // Wait for data channel to open
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Data channel open timeout'));
+        }, 30000);
+
+        dataChannel.on('open', () => {
+          clearTimeout(timeout);
+          resolve();
+        });
+
+        dataChannel.on('error', (err: Error) => {
+          clearTimeout(timeout);
+          reject(err);
+        });
+      });
+
+      connectingAnim?.stop();
+      connectingAnim = null;
+
+      // Detect connection mode
+      const mode = peer.detectConnectionMode();
+      if (!quiet) {
+        process.stdout.write(renderConnected(mode));
+        resetProgressAnimation();
+      }
+
+      // Send file
+      const result = await sendFile({
+        filePath: resolvedPath,
+        dataChannel,
+        onProgress: quiet ? undefined : (p: TransferProgress) => {
+          writeProgress(p);
+        },
+      });
+
+      if (!quiet) {
+        clearProgress();
+        process.stdout.write(
+          renderCompleted(
+            filePath,
+            result.bytesTransferred,
+            result.elapsed,
+            result.verified,
+          ),
+        );
+      } else {
+        console.log(JSON.stringify(result));
+      }
+    } finally {
+      waitingAnim?.stop();
+      connectingAnim?.stop();
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
