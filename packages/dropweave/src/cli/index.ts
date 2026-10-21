@@ -11,15 +11,16 @@
 import { Command } from 'commander';
 import { sendCommand } from './send.js';
 import { receiveCommand } from './receive.js';
+import { VERSION } from '../core/constants.js';
 
-const DEFAULT_SIGNALING_URL = 'ws://localhost:8080/ws';
+const DEFAULT_SIGNALING_URL = process.env.DROPWEAVE_SIGNALING_URL || 'ws://localhost:8080/ws';
 
 const program = new Command();
 
 program
   .name('dropweave')
   .description('Anonymous peer-to-peer file transfer. Zero-knowledge. Direct connection.')
-  .version('1.0.0');
+  .version(VERSION);
 
 program
   .command('send')

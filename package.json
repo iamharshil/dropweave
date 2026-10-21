@@ -1,6 +1,6 @@
 {
   "name": "dropweave-monorepo",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Anonymous, zero-knowledge, peer-to-peer file transfer CLI over WebRTC.",
   "workspaces": [

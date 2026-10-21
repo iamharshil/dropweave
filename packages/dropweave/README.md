@@ -165,8 +165,9 @@ Arguments:
   file                     Path to the file to send
 
 Options:
-  -s, --signal <url>       Signaling server URL (default: "ws://localhost:8080/ws")
+  -s, --signal <url>       Signaling server URL (default: "ws://localhost:8080/ws" or DROPWEAVE_SIGNALING_URL)
   -t, --timeout <seconds>  Session timeout in seconds (default: "600")
+  --no-stun                Disable public STUN servers (for local/LAN transfers)
   -q, --quiet              Quiet mode — output JSON only (default: false)
   -h, --help               Display help for command
 ```
@@ -178,6 +179,9 @@ dropweave send ./archive.tar.gz -t 300
 
 # Connect to a hosted signaling server
 dropweave send ./data.sqlite -s wss://signal.mydomain.com/ws
+
+# Local LAN transfer (skip public STUN)
+dropweave send ./photo.jpg --no-stun
 
 # Quiet JSON mode for automation
 dropweave send ./build.zip --quiet
@@ -194,8 +198,9 @@ Arguments:
   code                The 8-character connection code (hyphens & case-insensitive)
 
 Options:
-  -s, --signal <url>  Signaling server URL (default: "ws://localhost:8080/ws")
+  -s, --signal <url>  Signaling server URL (default: "ws://localhost:8080/ws" or DROPWEAVE_SIGNALING_URL)
   -o, --output <dir>  Directory to save received file (default: ".")
+  --no-stun           Disable public STUN servers (for local/LAN transfers)
   -q, --quiet         Quiet mode — output JSON only (default: false)
   -h, --help          Display help for command
 ```
