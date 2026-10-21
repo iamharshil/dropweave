@@ -453,10 +453,11 @@ To release a new version of Dropweave:
     -   Push and create PR: `gh pr create`
     -   Merge to `main`: `gh pr merge --squash --delete-branch`
 4.  **Create Git Tag and GitHub Release**:
+    *Strict Rule: The release title and tag MUST contain ONLY the version string (e.g. `v1.0.2` or `v2.0`). Do NOT append descriptive text, subtitles, or extra names.*
     ```bash
     git tag -a vX.Y.Z <commit-hash> -m "vX.Y.Z"
     git push origin --tags
-    gh release create vX.Y.Z --title "vX.Y.Z - <Release Title>" --notes "<Release Notes>"
+    gh release create vX.Y.Z --title "vX.Y.Z" --notes "<Release Notes>"
     ```
 5.  **Direct Manual Publish (Fallback)**:
     If publishing manually from the CLI:
@@ -472,9 +473,12 @@ To release a new version of Dropweave:
 
 -   **`v1.0.0`**: Initial release. Anonymous peer-to-peer file transfer CLI over WebRTC data channels with zero-knowledge WebSocket signaling, adaptive chunking (16–256 KiB), backpressure flow control, and streaming SHA-256 verification.
 -   **`v1.0.1`**: Fixed npm binary script path (`./dist/cli/index.js`), added immediate rejection on `session:error` to eliminate 30-second signaling hangs, added `DROPWEAVE_SIGNALING_URL` environment variable support, added `--no-stun` documentation, updated READMEs with beginner-friendly guides, and established GitHub Releases.
+-   **`v1.0.2`**: Expanded npm search keywords, package repository metadata, and practical cross-platform use cases.
+-   **`v1.0.3`**: Multi-version automated CI/CD npm publishing with signed Sigstore provenance verification and comprehensive security test suites.
 
-### Security Rules for Release Operations
+### Security & Operational Rules for Release Operations
 
+-   **Version Title Rule (STRICT)**: Release titles, tag names, and version names must be strictly the version string only (e.g. `v1.0.2`, `v2.0`). Never add subtitles or descriptive text (e.g. use `--title "v1.0.4"`, NEVER `--title "v1.0.4 - New Release"`).
 -   **Never commit, hardcode, or display tokens**: All npm access tokens must be stored only in GitHub Secrets (`NPM_TOKEN`) or local user config (`~/.npmrc`). Never commit them to the repository or log them in outputs.
 -   **Never inspect `.env` files**: Adhere to user and system privacy rules.
 -   **Sync READMEs**: Always keep root [`README.md`](file:///Users/harsh/development/dropweave/README.md) and [`packages/dropweave/README.md`](file:///Users/harsh/development/dropweave/packages/dropweave/README.md) identical so npmjs.com and GitHub render the same documentation.

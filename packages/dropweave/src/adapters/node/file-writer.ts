@@ -18,17 +18,20 @@ import { join, resolve, basename, dirname } from 'node:path';
  * Strips all directory components and dangerous characters.
  */
 export function sanitizeFileName(remoteName: string): string {
-  // Take only the basename (strip any directory components)
-  let safe = basename(remoteName);
+  // Normalize Windows backslashes to forward slashes first for cross-platform safety
+  let safe = remoteName.replace(/\\/g, '/');
 
   // Remove null bytes and other control characters
   safe = safe.replace(/[\x00-\x1f\x7f]/g, '');
 
+  // Take only the basename (strip any directory components)
+  safe = basename(safe);
+
   // Remove leading dots (hidden files)
   safe = safe.replace(/^\.+/, '');
 
-  // Remove dangerous characters for cross-platform safety
-  safe = safe.replace(/[<>:"|?*\\]/g, '_');
+  // Remove dangerous characters for cross-platform safety and trim whitespace
+  safe = safe.replace(/[<>:"|?*]/g, '_').trim();
 
   // Fallback if nothing is left
   if (safe.length === 0) {
@@ -37,7 +40,8 @@ export function sanitizeFileName(remoteName: string): string {
 
   // Truncate to reasonable length
   if (safe.length > 200) {
-    const ext = safe.slice(safe.lastIndexOf('.'));
+    const extIdx = safe.lastIndexOf('.');
+    const ext = extIdx !== -1 ? safe.slice(extIdx) : '';
     safe = safe.slice(0, 200 - ext.length) + ext;
   }
 

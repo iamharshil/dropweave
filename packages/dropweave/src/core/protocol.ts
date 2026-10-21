@@ -119,7 +119,13 @@ export function jsonPayload(obj: unknown): Uint8Array {
 
 /** Decode a UTF-8 payload back to a parsed JSON object. */
 export function parseJsonPayload<T = unknown>(payload: Uint8Array): T {
-  return JSON.parse(new TextDecoder().decode(payload)) as T;
+  try {
+    return JSON.parse(new TextDecoder().decode(payload)) as T;
+  } catch (err) {
+    throw new Error(
+      `Failed to parse JSON payload: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
 }
 
 /** Create a PING packet with the current high-resolution timestamp. */
